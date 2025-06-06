@@ -1,0 +1,497 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Content Writer</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Google Fonts: Inter for a clean, modern look -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        /* Custom styles to override or extend Tailwind for specific elements */
+        body {
+            font-family: 'Inter', sans-serif;
+            /* Tailwind handles body background, but keep font-family here for global consistency */
+        }
+
+        /* General input styling for consistency across select, input, textarea */
+        select, input[type="text"], textarea {
+            /* These are primarily styled with Tailwind classes now, but this ensures a base */
+            border-radius: 0.75rem; /* More rounded input fields */
+            padding: 0.75rem 1rem;
+            width: 100%;
+            font-size: 1rem;
+            transition: border-color 0.2s ease-in-out, box-shadow 0.2s ease-in-out;
+        }
+
+        select:focus, input[type="text"]:focus, textarea:focus {
+            outline: none;
+        }
+
+        /* Custom loading indicator animation */
+        .loading-indicator {
+            border: 4px solid #3f3f46; /* Neutral-700 for the track */
+            border-top: 4px solid #38bdf8; /* Sky-400 for the spinner */
+            border-radius: 50%;
+            width: 30px;
+            height: 30px;
+            animation: spin 1s linear infinite;
+            display: none; /* Hidden by default */
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        /* Message box styling for errors/info */
+        .message-box {
+            border-radius: 0.75rem;
+            padding: 1rem;
+            display: none; /* Hidden by default */
+        }
+        /* Specific styles for error messages (red tone) */
+        .message-box.error {
+            background-color: #ef444420; /* Red-500 with opacity */
+            color: #fca5a5; /* Red-300 */
+            border: 1px solid #dc2626; /* Red-600 */
+        }
+        /* Specific styles for info messages (blue tone) */
+        .message-box.info {
+            background-color: #3b82f620; /* Blue-500 with opacity */
+            color: #93c5fd; /* Blue-300 */
+            border: 1px solid #2563eb; /* Blue-700 */
+        }
+    </style>
+</head>
+<body class="bg-neutral-900 text-gray-100">
+    <div class="min-h-screen flex flex-col md:flex-row p-4 md:p-8 space-y-4 md:space-y-0 md:space-x-4">
+
+        <!-- Left Sidebar -->
+        <div class="bg-neutral-900 p-6 rounded-2xl shadow-xl flex-shrink-0 w-full md:w-64 lg:w-72 space-y-6">
+            <!-- Logo/Title -->
+            <div class="flex items-center mb-6">
+                <img src="https://placehold.co/32x32/171717/white?text=C" alt="Logo" class="rounded-lg mr-3">
+                <h2 class="text-xl font-bold">Collectiv.</h2>
+            </div>
+
+            <!-- API Key Input -->
+            <div class="mb-6">
+                <label for="apiKey" class="block text-gray-400 text-sm font-semibold mb-2">Your Gemini API Key:</label>
+                <input type="text" id="apiKey" placeholder="Enter your Gemini API key" class="w-full bg-neutral-800 text-gray-100 placeholder-gray-400 py-3 px-4 rounded-xl border border-neutral-600 focus:outline-none focus:ring-1 focus:ring-sky-400">
+                <p class="text-xs text-gray-500 mt-1">Your API key is not stored.</p>
+            </div>
+
+            <!-- Login Section -->
+            <div id="loginSection" class="mb-6">
+                <button id="loginBtn" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3 rounded-xl transition duration-200">Login with Google</button>
+                <div id="userProfile" class="flex items-center justify-center mt-3 p-2 bg-neutral-800 rounded-xl hidden">
+                    <!-- User photo and name will be injected here by JS -->
+                </div>
+            </div>
+
+            <!-- Clear Fields Button -->
+            <button id="clearFieldsBtn" class="w-full bg-neutral-700 hover:bg-neutral-600 text-gray-200 font-semibold py-3 rounded-xl transition duration-200">Clear all fields</button>
+
+            <!-- Content Generation Options -->
+            <div class="space-y-4">
+                <h3 class="text-xs uppercase tracking-wider text-gray-400 mt-6">Content Options</h3>
+                <div class="space-y-2">
+                    <label for="audience" class="block text-gray-300 text-sm font-medium">Audience</label>
+                    <select id="audience" class="w-full bg-neutral-800 text-gray-200 py-2 px-3 rounded-xl border border-neutral-600 focus:outline-none focus:ring-1 focus:ring-sky-400">
+                        <option value="general">General Public</option>
+                        <option value="experts">Industry Experts</option>
+                        <option value="beginners">Beginners</option>
+                        <option value="students">Students</option>
+                        <option value="parents">Parents</option>
+                        <option value="tech-enthusiasts">Tech Enthusiasts</option>
+                    </select>
+                </div>
+                <div class="space-y-2">
+                    <label for="industry" class="block text-gray-300 text-sm font-medium">Industry</label>
+                    <select id="industry" class="w-full bg-neutral-800 text-gray-200 py-2 px-3 rounded-xl border border-neutral-600 focus:outline-none focus:ring-1 focus:ring-sky-400">
+                        <option value="marketing">Marketing</option>
+                        <option value="technology">Technology</option>
+                        <option value="healthcare">Healthcare</option>
+                        <option value="finance">Finance</option>
+                        <option value="education">Education</option>
+                        <option value="food-beverage">Food & Beverage</option>
+                        <option value="fashion">Fashion</option>
+                        <option value="other">Other</option>
+                    </select>
+                </div>
+                <div class="space-y-2">
+                    <label for="demographics" class="block text-gray-300 text-sm font-medium">Demographics</label>
+                    <select id="demographics" class="w-full bg-neutral-800 text-gray-200 py-2 px-3 rounded-xl border border-neutral-600 focus:outline-none focus:ring-1 focus:ring-sky-400">
+                        <option value="all-ages">All Ages</option>
+                        <option value="18-24">18-24 years old</option>
+                        <option value="25-44">25-44 years old</option>
+                        <option value="45-64">45-64 years old</option>
+                        <option value="65-plus">65+ years old</option>
+                        <option value="urban">Urban Residents</option>
+                        <option value="rural">Rural Residents</option>
+                    </select>
+                </div>
+                <div class="space-y-2">
+                    <label for="tone" class="block text-gray-300 text-sm font-medium">Tone of Voice</label>
+                    <select id="tone" class="w-full bg-neutral-800 text-gray-200 py-2 px-3 rounded-xl border border-neutral-600 focus:outline-none focus:ring-1 focus:ring-sky-400">
+                        <option value="formal">Formal</option>
+                        <option value="informal">Informal</option>
+                        <option value="friendly">Friendly</option>
+                        <option value="professional">Professional</option>
+                        <option value="humorous">Humorous</option>
+                        <option value="authoritative">Authoritative</option>
+                        <option value="empathetic">Empathetic</option>
+                    </select>
+                </div>
+            </div>
+        </div>
+
+        <!-- Right Main Content Area -->
+        <div class="flex-grow bg-neutral-800 p-6 rounded-2xl shadow-xl space-y-6 flex flex-col">
+            <!-- Header/Navigation -->
+            <div class="flex justify-between items-center mb-4">
+                <h2 class="text-xl font-bold text-gray-200">AI Content Writer App</h2>
+            </div>
+            <div class="flex justify-end items-center mb-4">
+                <button id="clearChatBtn" class="text-sm text-gray-400 hover:text-gray-200 transition duration-200 py-2 px-4 rounded-xl bg-neutral-700 hover:bg-neutral-600">Clear Output</button>
+            </div>
+
+            <!-- User Prompt/Topic -->
+            <div class="mb-4 flex-grow flex flex-col">
+                <label for="userPrompt" class="block text-gray-300 text-sm font-semibold mb-2">Your Topic/Prompt:</label>
+                <textarea id="userPrompt" rows="10" placeholder="e.g., 'Write a blog post about the benefits of meditation for busy professionals.'" class="flex-grow w-full bg-neutral-800 text-gray-100 placeholder-gray-400 py-3 px-4 rounded-xl border border-neutral-600 focus:outline-none focus:ring-1 focus:ring-sky-400"></textarea>
+            </div>
+
+            <!-- Generate Button -->
+            <div class="flex items-center justify-center space-x-4 mb-6">
+                <button id="generateBtn" class="flex items-center space-x-2 bg-blue-500 hover:bg-blue-600 text-white font-semibold py-3 px-6 rounded-xl transition duration-200 shadow-lg">
+                    <span>Generate Content</span>
+                </button>
+                <div id="loadingIndicator" class="loading-indicator"></div>
+            </div>
+
+            <!-- Message Box for Errors/Info -->
+            <div id="messageBox" class="message-box"></div>
+
+            <!-- Generated Content Output -->
+            <div class="flex-grow flex flex-col">
+                <label class="block text-gray-300 text-sm font-semibold mb-2">Generated Content:</label>
+                <div id="outputArea" class="output-area flex-grow bg-neutral-800 text-gray-100 p-4 rounded-xl border border-neutral-600 overflow-auto whitespace-pre-wrap">
+                    Your generated content will appear here.
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script type="module">
+        // Import Firebase modules
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/9.6.1/firebase-app.js";
+        import { getAuth, GoogleAuthProvider, signInWithPopup, onAuthStateChanged, signInAnonymously, setPersistence, browserLocalPersistence, signOut } from "https://www.gstatic.com/firebasejs/9.6.1/firebase-auth.js";
+        // No Firestore import needed for this app as it only uses auth and Gemini API
+
+        // --- Firebase Configuration and Initialization ---
+        // Global variables provided by the Canvas environment
+        const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
+        const firebaseConfig = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : {
+            apiKey: "AIzaSyD-OdnMjad6fe1KtddpNtBoxdDdMxE91RY",
+            authDomain: "contentwriter-20e8d.firebaseapp.com",
+            projectId: "contentwriter-20e8d",
+            storageBucket: "contentwriter-20e8d.firebasestorage.app",
+            messagingSenderId: "804785009895",
+            appId: "1:804785009895:web:9661687478213eb7211e42"
+        };
+        const initialAuthToken = typeof __initial_auth_token !== 'undefined' ? __initial_auth_token : null;
+
+        // Initialize Firebase
+        const appFirebase = initializeApp(firebaseConfig);
+        const auth = getAuth(appFirebase);
+        const provider = new GoogleAuthProvider();
+        provider.setCustomParameters({});
+
+        // --- DOM Elements ---
+        const apiKeyInput = document.getElementById('apiKey');
+        const audienceSelect = document.getElementById('audience');
+        const industrySelect = document.getElementById('industry');
+        const demographicsSelect = document.getElementById('demographics');
+        const toneSelect = document.getElementById('tone');
+        const userPromptTextarea = document.getElementById('userPrompt');
+        const generateButton = document.getElementById('generateBtn');
+        const loadingIndicator = document.getElementById('loadingIndicator');
+        const outputArea = document.getElementById('outputArea');
+        const messageBox = document.getElementById('messageBox');
+        const loginBtn = document.getElementById('loginBtn');
+        const userProfileDiv = document.getElementById('userProfile');
+        const logoutBtn = document.getElementById('logoutBtn');
+        const clearFieldsBtn = document.getElementById('clearFieldsBtn');
+        const clearChatBtn = document.getElementById('clearChatBtn');
+        // Removed: const exampleButtons = document.querySelectorAll('.example-btn');
+
+        let currentUserId = null; // To store the authenticated user ID
+
+        // --- Helper Functions ---
+        function displayMessage(message, type = 'error') {
+            messageBox.textContent = message;
+            messageBox.className = `message-box ${type}`; // Apply error or info class
+            messageBox.style.display = 'block';
+        }
+
+        function hideMessage() {
+            messageBox.style.display = 'none';
+        }
+
+        function clearAllFields() {
+            apiKeyInput.value = '';
+            audienceSelect.value = 'general';
+            industrySelect.value = 'marketing';
+            demographicsSelect.value = 'all-ages';
+            toneSelect.value = 'formal';
+            userPromptTextarea.value = '';
+            outputArea.textContent = 'Your generated content will appear here.';
+            hideMessage();
+        }
+
+        function clearOutputArea() {
+            outputArea.textContent = 'Your generated content will appear here.';
+            hideMessage();
+        }
+
+        // --- Event Listeners ---
+
+        // Generate Content button click handler
+        generateButton.addEventListener('click', async () => {
+            hideMessage();
+
+            if (!auth.currentUser) {
+                displayMessage('Please log in to use the content generation feature.', 'error');
+                return;
+            }
+
+        const apiKey = apiKeyInput.value.trim();
+        if (!apiKey) {
+            displayMessage('Please enter your Gemini API key.', 'error');
+            return;
+        }
+
+        const userPrompt = userPromptTextarea.value.trim();
+        if (!userPrompt) {
+            displayMessage('Please enter your topic or prompt.', 'error');
+            return;
+        }
+
+        // Get selected options
+        const audience = audienceSelect.value;
+        const industry = industrySelect.value;
+        const demographics = demographicsSelect.value;
+        const tone = toneSelect.value;
+
+        // Define the AI's response role
+        const aiResponseRole = `
+            You are a Professional Virtual Content Writer Assistant.
+            Your role is to help users create high-quality, well-structured, and audience-appropriate written content.
+            This includes articles, blogs, website copy, product descriptions, social media posts, and other formats.
+            You provide guidance on writing style, tone, structure, and clarity—while delivering final, polished content in Burmese.
+
+            Your Responsibilities:
+            Respond to user input with professionally written, publication-ready Burmese content.
+            Ensure the writing is clear, engaging, accurate, and aligned with the intended audience and purpose.
+            Offer improvements when needed in grammar, tone, sentence flow, and readability.
+            Adapt writing style and format to suit the user’s goals, industry, and platform requirements.
+            Maintain originality and adhere to ethical content creation standards.
+
+            Boundaries:
+            You do not publish or manage content on behalf of the user.
+            You do not replace a licensed professional for legal, financial, or technical writing that requires subject-matter expertise.
+            When needed, advise users to consult a professional editor or strategist.
+
+            Guidelines:
+            Always deliver polished, high-quality content in Burmese.
+            Be clear, professional, and supportive in communication.
+            Ask clarifying questions when instructions or goals are vague.
+            Avoid filler or generic responses—focus on purposeful, publication-ready output.
+        `;
+
+        // Construct the detailed prompt for the AI, prepending the response role
+        const fullPrompt = `${aiResponseRole}\n\n` +
+            `I need content for the following topic: "${userPrompt}".\n` +
+            `Please consider the following details:\n` +
+            `- Audience: ${audience}\n` +
+            `- Industry: ${industry}\n` +
+            `- Demographics: ${demographics}\n` +
+            `- Tone of Voice: ${tone}\n\n` +
+            `Please generate a comprehensive and well-structured response.`;
+
+        // Show loading indicator and disable button
+        loadingIndicator.style.display = 'block';
+        generateButton.disabled = true;
+        outputArea.textContent = 'Generating content...';
+
+        const maxRetries = 5; // Maximum number of retries
+        const retryDelayMs = 2000; // Delay in milliseconds between retries
+
+        try {
+            let response;
+            let result;
+            let attempts = 0;
+
+            while (attempts < maxRetries) {
+                attempts++;
+                try {
+                    // Gemini API call
+                    let chatHistory = [];
+                    chatHistory.push({ role: "user", parts: [{ text: fullPrompt }] });
+                    const payload = { contents: chatHistory };
+                    const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${apiKey}`;
+
+                    response = await fetch(apiUrl, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(payload)
+                    });
+
+                    if (!response.ok) {
+                        const errorData = await response.json();
+                        // If it's a 503 error and we have retries left, wait and try again
+                        if (response.status === 503 && attempts < maxRetries) {
+                            console.warn(`API call failed with status 503, retrying in ${retryDelayMs}ms... (Attempt ${attempts}/${maxRetries})`);
+                            await new Promise(resolve => setTimeout(resolve, retryDelayMs));
+                            continue; // Continue to the next iteration of the while loop
+                        }
+                        // For other errors or if retries are exhausted, throw the error
+                        throw new Error(`API error: ${response.status} ${response.statusText} - ${errorData.error ? errorData.error.message : 'Unknown error'}`);
+                    }
+
+                    // If response is OK, break the loop
+                    result = await response.json();
+                    break;
+                } catch (innerError) {
+                    // If the error is not a 503 or max retries reached, re-throw
+                    if (attempts === maxRetries || (response && response.status !== 503)) {
+                        throw innerError;
+                    }
+                    // Otherwise, log and continue for 503 retries
+                    console.error(`Attempt ${attempts} failed:`, innerError);
+                }
+            }
+
+            // Check if result was obtained after retries
+            if (result && result.candidates && result.candidates.length > 0 &&
+                result.candidates[0].content && result.candidates[0].content.parts &&
+                result.candidates[0].content.parts.length > 0) {
+                const text = result.candidates[0].content.parts[0].text;
+                outputArea.textContent = text;
+            } else {
+                outputArea.textContent = 'No content generated. Please try again with a different prompt or check your API key.';
+                displayMessage('Failed to generate content. The API response was empty or malformed.', 'error');
+            }
+        } catch (error) {
+            console.error('Error generating content:', error);
+            let errorMessage = 'Error generating content. Please check your API key and internet connection.';
+            if (error.message.includes('503')) {
+                errorMessage = 'Error generating content: The AI model is currently overloaded. This is often a temporary issue with the Gemini API. Please wait a moment and try again.';
+            } else {
+                errorMessage = `An error occurred: ${error.message}`;
+            }
+            outputArea.textContent = errorMessage;
+            displayMessage(errorMessage, 'error');
+        } finally {
+            // Hide loading indicator and enable button
+            loadingIndicator.style.display = 'none';
+            generateButton.disabled = false;
+        }
+    });
+
+        // Login with Google button click handler
+        loginBtn.addEventListener('click', async () => {
+            alert("Login button clicked!");
+            console.log("Login button clicked");
+            try {
+                const result = await signInWithPopup(auth, provider);
+                console.log("User logged in successfully", result.user);
+                // User info is handled by onAuthStateChanged
+            } catch (error) {
+                console.error("Login failed", error);
+                if (error.code === 'auth/popup-closed-by-user') {
+                    displayMessage('Login failed: Please ensure the login popup is not blocked and complete the login process.', 'error');
+                } else {
+                    displayMessage(`Login failed: ${error.message}`, 'error');
+                }
+            }
+            console.log("Login button click handler finished");
+
+            // Add a timeout to display a message if the login process takes too long
+            setTimeout(() => {
+                if (!auth.currentUser) {
+                    displayMessage('Login is taking longer than expected. Please ensure the login popup is not blocked and complete the login process.', 'error');
+                }
+            }, 10000);
+        });
+
+        // Logout button click handler
+        userProfileDiv.addEventListener('click', async (event) => {
+            if (event.target.id === 'logoutBtn') {
+                try {
+                    await signOut(auth);
+                    console.log("User logged out successfully");
+                    displayMessage('Logged out successfully.', 'info');
+                } catch (error) {
+                    console.error("Logout failed", error);
+                    displayMessage(`Logout failed: ${error.message}`, 'error');
+                }
+            }
+        });
+
+        // Listen for authentication state changes
+        onAuthStateChanged(auth, async (user) => {
+            if (user) {
+                // User is signed in
+                currentUserId = user.uid;
+                loginBtn.style.display = 'none';
+                userProfileDiv.classList.remove('hidden');
+                userProfileDiv.innerHTML = `
+                    <img src="${user.photoURL || 'https://placehold.co/24x24/white/gray?text=U'}" alt="Google Account" class="rounded-full w-6 h-6 mr-2">
+                    <span class="text-gray-200 text-sm">${user.displayName || 'Guest'}</span>
+                    <button id="logoutBtn" class="bg-red-500 hover:bg-red-700 text-white font-semibold py-2 px-4 rounded-xl transition duration-200 ml-2">Logout</button>
+                `;
+            } else {
+                // No user is signed in
+                loginBtn.style.display = 'block';
+                userProfileDiv.classList.add('hidden');
+            }
+        });
+
+        // Initial sign-in attempt (if not already handled by onAuthStateChanged)
+        if (initialAuthToken && !auth.currentUser) {
+            signInWithCustomToken(auth, initialAuthToken);
+            console.log("Initial custom token sign-in successful.");
+            // } catch (error) {
+            // console.error("Initial custom token sign-in failed:", error);
+            // }
+        } else if (!auth.currentUser) {
+            // signInAnonymously(auth)
+            // try anonymous sign-in
+            // await signInAnonymously(auth);
+            // console.log("Initial anonymous sign-in successful.");
+            // } catch (error) {
+            // console.error("Initial anonymous sign-in failed:", error);
+            // }
+        }
+
+        // Clear all fields button handler
+        clearFieldsBtn.addEventListener('click', clearAllFields);
+
+        // Clear output area button handler
+        clearChatBtn.addEventListener('click', clearOutputArea);
+
+        // Removed: Example buttons handler
+        // exampleButtons.forEach(button => {
+        //     button.addEventListener('click', () => {
+        //         userPromptTextarea.value = button.textContent.trim();
+        //         displayMessage('Prompt updated from example!', 'info');
+        //     });
+        // });
+
+    </script>
+</body>
+</html>
